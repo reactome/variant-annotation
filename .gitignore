@@ -13,6 +13,7 @@ hs_err_pid*
 
 # IntelliJ IDE files
 \.idea/
+*.iml
 
 # Maven compilation target directory
 target/
