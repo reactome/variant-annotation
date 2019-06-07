@@ -17,3 +17,6 @@ hs_err_pid*
 
 # Maven compilation target directory
 target/
+
+# Variant annotation data files
+src/main/resources/*.tsv
