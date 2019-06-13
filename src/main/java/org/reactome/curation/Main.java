@@ -124,7 +124,9 @@ public class Main {
 			);
 		}
 
-		if (!abridgedCosmicRecord.getStatus().equals(diseaseGeneRecord.getStatus())) {
+		if (!abridgedCosmicRecord.getStatus().isEmpty() &&
+			!abridgedCosmicRecord.getStatus().equals(diseaseGeneRecord.getStatus())
+		) {
 			mismatches.add(diseaseGeneRecord.getProtein() + " in disease gene records with variant " +
 				diseaseGeneRecord.getVariantName() + " has a status of " + diseaseGeneRecord.getStatus() + " that does " +
 				"not match those the abridged cosmic record's status of " + abridgedCosmicRecord.getStatus() +
