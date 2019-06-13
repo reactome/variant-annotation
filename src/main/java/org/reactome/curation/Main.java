@@ -85,7 +85,6 @@ public class Main {
 
 	private static String createOutputLine(DiseaseGeneRecord diseaseGeneRecord,
 										   AdditionalAnnotations additionalAnnotations) {
-
 		return String.join(
 			"\t",
 			diseaseGeneRecord.getProtein(),
@@ -119,8 +118,9 @@ public class Main {
 
 		if (abridgedCosmicRecord.getReleaseVersion() != diseaseGeneRecord.getReleaseVersion()) {
 			mismatches.add(diseaseGeneRecord.getProtein() + " in disease gene records with variant " +
-				diseaseGeneRecord.getVariantName() + " has a release version that does not match those in the " +
-				" abridged cosmic record" + System.lineSeparator()
+				diseaseGeneRecord.getVariantName() + " has a release version of '" +
+				diseaseGeneRecord.getReleaseVersionAsString() + "' that does not match the abridged cosmic record's " +
+				"release version of '" + abridgedCosmicRecord.getReleaseVersion() + "'" + System.lineSeparator()
 			);
 		}
 
@@ -128,8 +128,8 @@ public class Main {
 			!abridgedCosmicRecord.getStatus().equals(diseaseGeneRecord.getStatus())
 		) {
 			mismatches.add(diseaseGeneRecord.getProtein() + " in disease gene records with variant " +
-				diseaseGeneRecord.getVariantName() + " has a status of " + diseaseGeneRecord.getStatus() + " that does " +
-				"not match those the abridged cosmic record's status of " + abridgedCosmicRecord.getStatus() +
+				diseaseGeneRecord.getVariantName() + " has a status of '" + diseaseGeneRecord.getStatus() + "' that " +
+				" not match the abridged cosmic record's status of '" + abridgedCosmicRecord.getStatus() + "'" +
 				System.lineSeparator()
 			);
 		}
