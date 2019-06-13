@@ -20,3 +20,7 @@ target/
 
 # Variant annotation data files
 src/main/resources/*.tsv
+
+# Output files
+merged\.txt
+merged\.err
