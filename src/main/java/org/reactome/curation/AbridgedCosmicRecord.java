@@ -93,6 +93,14 @@ public class AbridgedCosmicRecord {
 		return status;
 	}
 
+	public String getReleaseVersionAsString() {
+		if (releaseVersion == -1) {
+			return "";
+		} else {
+			return Integer.toString(releaseVersion);
+		}
+	}
+
 	public int getReleaseVersion() {
 		return releaseVersion;
 	}

@@ -120,7 +120,7 @@ public class Main {
 			mismatches.add(diseaseGeneRecord.getProtein() + " in disease gene records with variant " +
 				diseaseGeneRecord.getVariantName() + " has a release version of '" +
 				diseaseGeneRecord.getReleaseVersionAsString() + "' that does not match the abridged cosmic record's " +
-				"release version of '" + abridgedCosmicRecord.getReleaseVersion() + "'" + System.lineSeparator()
+				"release version of '" + abridgedCosmicRecord.getReleaseVersionAsString() + "'" + System.lineSeparator()
 			);
 		}
 
