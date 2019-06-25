@@ -9,7 +9,7 @@ import static org.reactome.curation.ParseUtilities.*;
 public class AbridgedCosmicRecord {
 	private final static String EXPECTED_HEADER = String.join(
 		"\t",
-		"Gene name",
+		"Protein",
 		"Mutation AA",
 		"Variant name",
 		"Variant ID",
@@ -24,6 +24,7 @@ public class AbridgedCosmicRecord {
 	);
 
 	private String geneName;
+	private String protein;
 	private String mutationAA;
 	private String variantName;
 	private String variantId;
@@ -39,7 +40,7 @@ public class AbridgedCosmicRecord {
 	private AbridgedCosmicRecord(String tsvLine) {
 		int currentField = 0;
 
-		this.geneName = getField(tsvLine, currentField++);
+		this.protein = getField(tsvLine, currentField++);
 		this.mutationAA = getField(tsvLine, currentField++);
 		this.variantName = getField(tsvLine, currentField++);
 		this.variantId = getField(tsvLine, currentField++);
@@ -59,6 +60,8 @@ public class AbridgedCosmicRecord {
 
 	public String getGeneName() {
 		return geneName;
+	public String getProtein() {
+		return protein;
 	}
 
 	public String getMutationAA() {
