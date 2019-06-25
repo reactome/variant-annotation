@@ -46,6 +46,14 @@ public class HighPriorityVariantRecord {
 		return count;
 	}
 
+	public String getIsProteinInReactomeAsString() {
+		if (isProteinInReactome == null) {
+			return "";
+		} else {
+			return isProteinInReactome ? "yes" : "no";
+		}
+	}
+
 	public Boolean proteinIsInReactome() {
 		return isProteinInReactome;
 	}
