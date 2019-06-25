@@ -4,12 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.System.lineSeparator;
 import static org.reactome.curation.ParseUtilities.equalOrBothNull;
 
 public class Main {
@@ -27,6 +25,7 @@ public class Main {
 												   "WT_Reactome_Pathway", "Selected_pubmed_PMID", "COSMIC_Pubmed_PMID",
 												   "Curator", "Consequence", "NormalReaction", "Comments", "Status",
 												   "ReleaseVersion", "Protein_in_Reactome", "Any_Variants_Annotated");
+		Map<String, String> variantNameToOutputLine = new LinkedHashMap<>();
 
 		List<DiseaseGeneRecord> diseaseGeneRecords = DiseaseGeneRecord.parseDiseaseGeneRecords(
 			Paths.get(tsvDir, "DiseaseGenes.tsv").toString());
@@ -42,23 +41,48 @@ public class Main {
 		Map<String, List<AbridgedCosmicRecord>> variantNameToAbridgedCosmicRecords = allAbridgedCosmicRecords.stream().collect(Collectors.groupingBy(AbridgedCosmicRecord::getVariantName));
 
 
-		printToFile(String.join("\t", outputHeaders).concat(System.lineSeparator()), outputFile);
 		for (DiseaseGeneRecord diseaseGeneRecord : diseaseGeneRecords) {
 			List<HighPriorityVariantRecord> highPriorityVariantRecords = variantNameToHighPriorityVariantRecords.computeIfAbsent(
-				diseaseGeneRecord.getVariantName(), k -> new ArrayList<>());
+				diseaseGeneRecord.getVariantName(), k -> new ArrayList<>()
+			);
 
 			List<AbridgedCosmicRecord> abridgedCosmicRecords = variantNameToAbridgedCosmicRecords.computeIfAbsent(
-				diseaseGeneRecord.getVariantName(), k -> new ArrayList<>());
+				diseaseGeneRecord.getVariantName(), k -> new ArrayList<>()
+			);
 
 			if (abridgedCosmicRecords.isEmpty()) {
 				AdditionalAnnotations additionalAnnotations = new AdditionalAnnotations.Builder()
 					.isProteinInReactome(getIsProteinInReactome(highPriorityVariantRecords))
 					.build();
-				printToFile(createOutputLine(diseaseGeneRecord, additionalAnnotations), outputFile);
+				variantNameToOutputLine.put(
+					diseaseGeneRecord.getVariantName(),
+					createOutputLine(diseaseGeneRecord, additionalAnnotations)
+				);
 			} else {
-				for (AbridgedCosmicRecord abridgedCosmicRecord : abridgedCosmicRecords) {
+				if (!abridgedCosmicRecords
+						.stream()
+						.allMatch(
+							abr -> abr.isSameOtherThanVariantAndCosmicPubMedId(abridgedCosmicRecords.get(0))
+						)
+				) {
+					String error = diseaseGeneRecord.getVariantName() + " has abridged cosmic records with " +
+								   "differences (omitted from merged output)" + lineSeparator();
+					printToFile(error, errorFile);
+				} else {
+					List<String> variantIds = abridgedCosmicRecords
+						.stream()
+						.map(AbridgedCosmicRecord::getVariantId)
+						.collect(Collectors.toList());
+
+					List<Integer> cosmicPubMedIds = abridgedCosmicRecords
+						.stream()
+						.map(AbridgedCosmicRecord::getCosmicPubMedId)
+						.collect(Collectors.toList());
+
+					AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
+
 					List<String> mismatches = getMismatches(
-						abridgedCosmicRecord, diseaseGeneRecord, highPriorityVariantRecords
+						representativeAbridgedCosmicRecord, diseaseGeneRecord, highPriorityVariantRecords
 					);
 
 					if (!mismatches.isEmpty()) {
@@ -69,18 +93,94 @@ public class Main {
 					}
 
 					AdditionalAnnotations additionalAnnotations = new AdditionalAnnotations.Builder()
-						.withVariantId(abridgedCosmicRecord.getVariantId())
-						.withMutationAA(abridgedCosmicRecord.getMutationAA())
-						.withCosmicPubMedId(abridgedCosmicRecord.getCosmicPubMedId())
-						.isProteinInReactome(abridgedCosmicRecord.proteinIsInReactome())
-						.areAnyVariantsAnnotated(abridgedCosmicRecord.anyVariantsAreAnnotated())
+						.withVariantIds(variantIds)
+						.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
+						.withCosmicPubMedIds(cosmicPubMedIds)
+						.isProteinInReactome(representativeAbridgedCosmicRecord.proteinIsInReactome())
+						.areAnyVariantsAnnotated(representativeAbridgedCosmicRecord.anyVariantsAreAnnotated())
 						.build();
 
-
-					printToFile(createOutputLine(diseaseGeneRecord, additionalAnnotations), outputFile);
+					variantNameToOutputLine.put(
+						diseaseGeneRecord.getVariantName(),
+						createOutputLine(diseaseGeneRecord, additionalAnnotations)
+					);
 				}
 			}
 		}
+
+		for (HighPriorityVariantRecord highPriorityVariantRecord : allHighPriorityVariantRecords) {
+			List<AbridgedCosmicRecord> abridgedCosmicRecords = variantNameToAbridgedCosmicRecords.computeIfAbsent(
+				highPriorityVariantRecord.getVariantName(), k -> new ArrayList<>()
+			);
+
+			if (abridgedCosmicRecords.isEmpty()) {
+				String error = highPriorityVariantRecord.getVariantName() + " does not have any corresponding " +
+							   "abridged cosmic record(s)" + lineSeparator();
+				printToFile(error, errorFile);
+				continue;
+			}
+
+			if (!abridgedCosmicRecords
+				.stream()
+				.allMatch(
+					abr -> abr.isSameOtherThanVariantAndCosmicPubMedId(abridgedCosmicRecords.get(0))
+				)
+			) {
+				String error = highPriorityVariantRecord.getVariantName() + " has abridged cosmic records with " +
+							   "differences (omitted from merged output)" + lineSeparator();
+
+				printToFile(error, errorFile);
+			} else {
+				List<String> variantIds = abridgedCosmicRecords
+					.stream()
+					.map(AbridgedCosmicRecord::getVariantId)
+					.collect(Collectors.toList());
+
+				List<Integer> cosmicPubMedIds = abridgedCosmicRecords
+					.stream()
+					.map(AbridgedCosmicRecord::getCosmicPubMedId)
+					.collect(Collectors.toList());
+
+				AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
+
+				List<String> mismatches = getMismatches(
+					highPriorityVariantRecord, representativeAbridgedCosmicRecord
+				);
+
+				if (!mismatches.isEmpty()) {
+					for (String mismatchError : mismatches) {
+						printToFile(mismatchError, errorFile);
+					}
+					continue;
+				}
+
+				if (representativeAbridgedCosmicRecord.getReleaseVersion() == 0) {
+					System.out.println("hello");
+				}
+
+				AdditionalAnnotations additionalAnnotations = new AdditionalAnnotations.Builder()
+					.withProtein(representativeAbridgedCosmicRecord.getProtein())
+					.withVariantIds(variantIds)
+					.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
+					.withCosmicPubMedIds(cosmicPubMedIds)
+					.withStatus(representativeAbridgedCosmicRecord.getStatus())
+					.withReleaseVersion(representativeAbridgedCosmicRecord.getReleaseVersion())
+					.isProteinInReactome(representativeAbridgedCosmicRecord.proteinIsInReactome())
+					.areAnyVariantsAnnotated(representativeAbridgedCosmicRecord.anyVariantsAreAnnotated())
+					.build();
+
+				variantNameToOutputLine.put(
+					highPriorityVariantRecord.getVariantName(),
+					createOutputLine(highPriorityVariantRecord, additionalAnnotations)
+				);
+			}
+		}
+
+		printToFile(String.join("\t", outputHeaders).concat(lineSeparator()), outputFile);
+		for (String outputLine : variantNameToOutputLine.values()) {
+			printToFile(outputLine, outputFile);
+		}
+
 	}
 
 	private static String createOutputLine(DiseaseGeneRecord diseaseGeneRecord,
@@ -91,13 +191,13 @@ public class Main {
 			diseaseGeneRecord.getOmimIdentifier(),
 			diseaseGeneRecord.getUniprotId(),
 			diseaseGeneRecord.getVariantName(),
-			additionalAnnotations.getVariantId(),
+			additionalAnnotations.getVariantIdsAsString(),
 			diseaseGeneRecord.getDiseaseAsString(),
 			additionalAnnotations.getMutationAA(),
 			diseaseGeneRecord.getGofLofNull(),
 			diseaseGeneRecord.getWtReactomePathway(),
 			diseaseGeneRecord.getSelectedPubMedIdsAsString(),
-			additionalAnnotations.getCosmicPubMedIdAsString(),
+			additionalAnnotations.getCosmicPubMedIdsAsString(),
 			diseaseGeneRecord.getCurator(),
 			diseaseGeneRecord.getConsequenceAsString(),
 			diseaseGeneRecord.getNormalReactionAsString(),
@@ -106,7 +206,38 @@ public class Main {
 			diseaseGeneRecord.getReleaseVersionAsString(),
 			additionalAnnotations.getIsProteinInReactomeAsString(),
 			additionalAnnotations.getAreAnyVariantsAnnotatedAsString()
-		).concat(System.lineSeparator());
+		).concat(lineSeparator());
+	}
+
+	private static String createOutputLine(HighPriorityVariantRecord highPriorityVariantRecord,
+										   AdditionalAnnotations additionalAnnotations) {
+		if (additionalAnnotations.getReleaseVersion() == 0) {
+			System.out.println(highPriorityVariantRecord.getVariantName());
+		}
+
+
+		return String.join(
+			"\t",
+			additionalAnnotations.getProtein(),
+			"",
+			"",
+			highPriorityVariantRecord.getVariantName(),
+			additionalAnnotations.getVariantIdsAsString(),
+			"",
+			additionalAnnotations.getMutationAA(),
+			"",
+			"",
+			"",
+			additionalAnnotations.getCosmicPubMedIdsAsString(),
+			"",
+			"",
+			"",
+			"",
+			additionalAnnotations.getStatus(),
+			additionalAnnotations.getReleaseVersionAsString(),
+			highPriorityVariantRecord.getIsProteinInReactomeAsString(),
+			additionalAnnotations.getAreAnyVariantsAnnotatedAsString()
+		).concat(lineSeparator());
 	}
 
 	private static List<String> getMismatches(
@@ -116,11 +247,22 @@ public class Main {
 	) {
 		List<String> mismatches = new ArrayList<>();
 
-		if (abridgedCosmicRecord.getReleaseVersion() != diseaseGeneRecord.getReleaseVersion()) {
+		mismatches.addAll(getMismatches(diseaseGeneRecord, abridgedCosmicRecord));
+		mismatches.addAll(getMismatches(highPriorityVariantRecords, abridgedCosmicRecord));
+
+		return mismatches;
+	}
+
+	private static List<String> getMismatches(DiseaseGeneRecord diseaseGeneRecord,
+										AbridgedCosmicRecord abridgedCosmicRecord) {
+		List<String> mismatches = new ArrayList<>();
+
+		if (!abridgedCosmicRecord.getReleaseVersionAsString().isEmpty() &&
+			abridgedCosmicRecord.getReleaseVersion() != diseaseGeneRecord.getReleaseVersion()) {
 			mismatches.add(diseaseGeneRecord.getProtein() + " in disease gene records with variant " +
-				diseaseGeneRecord.getVariantName() + " has a release version of '" +
-				diseaseGeneRecord.getReleaseVersionAsString() + "' that does not match the abridged cosmic record's " +
-				"release version of '" + abridgedCosmicRecord.getReleaseVersionAsString() + "'" + System.lineSeparator()
+						   diseaseGeneRecord.getVariantName() + " has a release version of '" +
+						   diseaseGeneRecord.getReleaseVersionAsString() + "' that does not match the abridged cosmic record's " +
+						   "release version of '" + abridgedCosmicRecord.getReleaseVersionAsString() + "'" + lineSeparator()
 			);
 		}
 
@@ -128,19 +270,39 @@ public class Main {
 			!abridgedCosmicRecord.getStatus().equals(diseaseGeneRecord.getStatus())
 		) {
 			mismatches.add(diseaseGeneRecord.getProtein() + " in disease gene records with variant " +
-				diseaseGeneRecord.getVariantName() + " has a status of '" + diseaseGeneRecord.getStatus() + "' that " +
-				" not match the abridged cosmic record's status of '" + abridgedCosmicRecord.getStatus() + "'" +
-				System.lineSeparator()
+						   diseaseGeneRecord.getVariantName() + " has a status of '" + diseaseGeneRecord.getStatus() + "' that " +
+						   " not match the abridged cosmic record's status of '" + abridgedCosmicRecord.getStatus() + "'" +
+						   lineSeparator()
 			);
 		}
+
+		return mismatches;
+	}
+
+	private static List<String> getMismatches(List<HighPriorityVariantRecord> highPriorityVariantRecords,
+									   AbridgedCosmicRecord abridgedCosmicRecord) {
+		List<String> mismatches = new ArrayList<>();
 
 		if (!highPriorityVariantRecords.stream().allMatch(
 			hpvRecord -> equalOrBothNull(hpvRecord.proteinIsInReactome(), abridgedCosmicRecord.proteinIsInReactome())
 		)) {
 			mismatches.add(abridgedCosmicRecord.getVariantName() + " in abridged cosmic records has a value for " +
-				"'proteins in reactome' that does not match those in the high priority variant records" +
-				System.lineSeparator()
+						   "'proteins in reactome' that does not match those in the high priority variant records" +
+						   lineSeparator()
 			);
+		}
+
+		return mismatches;
+	}
+
+	private static List<String> getMismatches(HighPriorityVariantRecord highPriorityVariantRecord,
+									   AbridgedCosmicRecord abridgedCosmicRecord) {
+		List<String> mismatches = new ArrayList<>();
+
+		if (!equalOrBothNull(highPriorityVariantRecord.proteinIsInReactome(), abridgedCosmicRecord.proteinIsInReactome())) {
+			mismatches.add(abridgedCosmicRecord.getVariantName() + " in abridged cosmic records has a value for " +
+						   "'proteins in reactome' that does not match those in the high priority variant records" +
+						   lineSeparator());
 		}
 
 		return mismatches;
