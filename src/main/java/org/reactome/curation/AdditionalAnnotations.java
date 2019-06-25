@@ -1,14 +1,24 @@
 package org.reactome.curation;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class AdditionalAnnotations {
+	private String protein;
 	private Boolean proteinInReactome;
-	private String variantId;
+	private List<String> variantIds;
 	private String mutationAA;
-	private Integer cosmicPubMedId;
+	private List<Integer> cosmicPubMedIds;
+	private String status;
+	private int releaseVersion;
 	private Boolean areAnyVariantsAnnotated;
 
 	private AdditionalAnnotations() {
 
+	}
+
+	public String getProtein() {
+		return protein;
 	}
 
 	public String getIsProteinInReactomeAsString() {
@@ -23,20 +33,55 @@ public class AdditionalAnnotations {
 		return proteinInReactome;
 	}
 
-	public String getVariantId() {
-		return variantId == null ? "" : variantId;
+	public String getVariantIdsAsString() {
+		if (variantIds == null || variantIds.isEmpty()) {
+			return "";
+		}
+
+		return variantIds
+			.stream()
+			.distinct()
+			.collect(Collectors.joining(","));
+	}
+
+	public List<String> getVariantIds() {
+		return variantIds;
 	}
 
 	public String getMutationAA() {
 		return mutationAA == null ? "" : mutationAA;
 	}
 
-	public String getCosmicPubMedIdAsString() {
-		return cosmicPubMedId == null ? "" : cosmicPubMedId.toString();
+	public String getCosmicPubMedIdsAsString() {
+		if (cosmicPubMedIds == null || cosmicPubMedIds.isEmpty()) {
+			return "";
+		}
+
+		return cosmicPubMedIds
+			.stream()
+			.distinct()
+			.map(Object::toString)
+			.collect(Collectors.joining(","));
 	}
 
-	public Integer getCosmicPubMedId() {
-		return cosmicPubMedId;
+	public String getStatus() {
+		return status;
+	}
+
+	public int getReleaseVersion() {
+		return releaseVersion;
+	}
+
+	public String getReleaseVersionAsString() {
+		if (releaseVersion == -1) {
+			return "";
+		} else {
+			return Integer.toString(releaseVersion);
+		}
+	}
+
+	public List<Integer> getCosmicPubMedIds() {
+		return cosmicPubMedIds;
 	}
 
 	public String getAreAnyVariantsAnnotatedAsString() {
@@ -52,14 +97,23 @@ public class AdditionalAnnotations {
 	}
 
 	public static class Builder {
+		private String protein;
 		private Boolean proteinInReactome;
-		private String variantId;
+		private List<String> variantIds;
 		private String mutationAA;
-		private Integer cosmicPubMedId;
+		private List<Integer> cosmicPubMedIds;
+		private String status;
+		private int releaseVersion;
 		private Boolean areAnyVariantsAnnotated;
 
 		public Builder() {
 
+		}
+
+		public Builder withProtein(String protein) {
+			this.protein = protein;
+
+			return this;
 		}
 
 		public Builder isProteinInReactome(Boolean proteinInReactome) {
@@ -68,8 +122,8 @@ public class AdditionalAnnotations {
 			return this;
 		}
 
-		public Builder withVariantId(String variantId) {
-			this.variantId = variantId;
+		public Builder withVariantIds(List<String> variantIds) {
+			this.variantIds = variantIds;
 
 			return this;
 		}
@@ -80,11 +134,23 @@ public class AdditionalAnnotations {
 			return this;
 		}
 
-		public Builder withCosmicPubMedId(int cosmicPubMedId) {
-			this.cosmicPubMedId = cosmicPubMedId;
+		public Builder withCosmicPubMedIds(List<Integer> cosmicPubMedIds) {
+			this.cosmicPubMedIds = cosmicPubMedIds;
 
 			return this;
 
+		}
+
+		public Builder withStatus(String status) {
+			this.status = status;
+
+			return this;
+		}
+
+		public Builder withReleaseVersion(int releaseVersion) {
+			this.releaseVersion = releaseVersion;
+
+			return this;
 		}
 
 		public Builder areAnyVariantsAnnotated(Boolean areAnyVariantsAnnotated) {
@@ -95,10 +161,14 @@ public class AdditionalAnnotations {
 
 		public AdditionalAnnotations build() {
 			AdditionalAnnotations annotations = new AdditionalAnnotations();
+
+			annotations.protein = protein;
 			annotations.proteinInReactome = this.proteinInReactome;
-			annotations.variantId = this.variantId;
+			annotations.variantIds = this.variantIds;
 			annotations.mutationAA = this.mutationAA;
-			annotations.cosmicPubMedId = this.cosmicPubMedId;
+			annotations.cosmicPubMedIds = this.cosmicPubMedIds;
+			annotations.status = this.status;
+			annotations.releaseVersion = this.releaseVersion;
 			annotations.areAnyVariantsAnnotated = this.areAnyVariantsAnnotated;
 
 			return annotations;
