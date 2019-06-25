@@ -24,3 +24,6 @@ src/main/resources/*.tsv
 # Output files
 merged\.txt
 merged\.err
+
+# Older source tsv files
+src/main/resources/archived
