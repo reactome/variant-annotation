@@ -40,6 +40,7 @@ public class AbridgedCosmicRecord {
 
 	private AbridgedCosmicRecord(String tsvLine) {
 		this.tsvLine = tsvLine;
+
 		int currentField = 0;
 
 		this.protein = getField(tsvLine, currentField++);
@@ -60,8 +61,24 @@ public class AbridgedCosmicRecord {
 		return GenericRecord.parseRecords(tsvFilePath, EXPECTED_HEADER, AbridgedCosmicRecord::new);
 	}
 
-	public String getGeneName() {
-		return geneName;
+	public boolean isSameOtherThanVariantAndCosmicPubMedId(AbridgedCosmicRecord abridgedCosmicRecord) {
+		if (this == abridgedCosmicRecord) {
+			return true;
+		}
+
+		return
+			this.protein.equals(abridgedCosmicRecord.getProtein()) &&
+			this.mutationAA.equals(abridgedCosmicRecord.getMutationAA()) &&
+			this.variantName.equals(abridgedCosmicRecord.getVariantName()) &&
+			equalOrBothNull(this.isProteinInReactome, abridgedCosmicRecord.proteinIsInReactome()) &&
+			equalOrBothNull(this.areAnyVariantsAnnotated, abridgedCosmicRecord.anyVariantsAreAnnotated()) &&
+			equalOrBothNull(this.highPriority, abridgedCosmicRecord.isHighPriority()) &&
+			this.status.equals(abridgedCosmicRecord.getStatus()) &&
+			this.releaseVersion == abridgedCosmicRecord.getReleaseVersion() &&
+			this.mutationDescription.equals(abridgedCosmicRecord.getMutationDescription()) &&
+			this.otherVariantsAnnotatedInReactome.equals(abridgedCosmicRecord.getOtherVariantsAnnotatedInReactome());
+	}
+
 	@Override
 	public String toString() {
 		return this.tsvLine;
