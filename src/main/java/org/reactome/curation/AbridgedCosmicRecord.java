@@ -23,7 +23,8 @@ public class AbridgedCosmicRecord {
 		"other variants annotated in Reactome"
 	);
 
-	private String geneName;
+	private String tsvLine;
+
 	private String protein;
 	private String mutationAA;
 	private String variantName;
@@ -38,6 +39,7 @@ public class AbridgedCosmicRecord {
 	private String otherVariantsAnnotatedInReactome;
 
 	private AbridgedCosmicRecord(String tsvLine) {
+		this.tsvLine = tsvLine;
 		int currentField = 0;
 
 		this.protein = getField(tsvLine, currentField++);
@@ -60,6 +62,11 @@ public class AbridgedCosmicRecord {
 
 	public String getGeneName() {
 		return geneName;
+	@Override
+	public String toString() {
+		return this.tsvLine;
+	}
+
 	public String getProtein() {
 		return protein;
 	}
