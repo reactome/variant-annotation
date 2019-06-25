@@ -19,8 +19,7 @@ public class AbridgedCosmicRecord {
 		"high priority",
 		"Status",
 		"ReleaseVersion",
-		"Mutation Description",
-		"other variants annotated in Reactome"
+		"Mutation Description"
 	);
 
 	private String tsvLine;
@@ -36,7 +35,6 @@ public class AbridgedCosmicRecord {
 	private String status;
 	private int releaseVersion;
 	private String mutationDescription;
-	private String otherVariantsAnnotatedInReactome;
 
 	private AbridgedCosmicRecord(String tsvLine) {
 		this.tsvLine = tsvLine;
@@ -54,7 +52,6 @@ public class AbridgedCosmicRecord {
 		this.status = getField(tsvLine, currentField++);
 		this.releaseVersion = parseReleaseVersion(getField(tsvLine, currentField++));
 		this.mutationDescription = getField(tsvLine, currentField++);
-		this.otherVariantsAnnotatedInReactome = getField(tsvLine, currentField++);
 	}
 
 	public static List<AbridgedCosmicRecord> parseAbridgedCosmicRecords(String tsvFilePath) throws IOException {
@@ -75,8 +72,7 @@ public class AbridgedCosmicRecord {
 			equalOrBothNull(this.highPriority, abridgedCosmicRecord.isHighPriority()) &&
 			this.status.equals(abridgedCosmicRecord.getStatus()) &&
 			this.releaseVersion == abridgedCosmicRecord.getReleaseVersion() &&
-			this.mutationDescription.equals(abridgedCosmicRecord.getMutationDescription()) &&
-			this.otherVariantsAnnotatedInReactome.equals(abridgedCosmicRecord.getOtherVariantsAnnotatedInReactome());
+			this.mutationDescription.equals(abridgedCosmicRecord.getMutationDescription());
 	}
 
 	@Override
@@ -134,9 +130,5 @@ public class AbridgedCosmicRecord {
 
 	public String getMutationDescription() {
 		return mutationDescription;
-	}
-
-	public String getOtherVariantsAnnotatedInReactome() {
-		return otherVariantsAnnotatedInReactome;
 	}
 }
