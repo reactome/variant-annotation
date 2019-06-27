@@ -58,6 +58,19 @@ public class HighPriorityVariantRecord {
 		return isProteinInReactome;
 	}
 
+	public static Boolean getIsProteinInReactome(List<HighPriorityVariantRecord> highPriorityVariantRecords) {
+		if (highPriorityVariantRecords.size() > 1) {
+			System.out.println(highPriorityVariantRecords.toString());
+		}
+
+		if (highPriorityVariantRecords.isEmpty() ||
+			highPriorityVariantRecords.stream().allMatch(r -> r.proteinIsInReactome() == null)) {
+			return null;
+		}
+
+		return highPriorityVariantRecords.stream().anyMatch(HighPriorityVariantRecord::proteinIsInReactome);
+	}
+
 	public String geneHasVariantsInReactome() {
 		return geneHasVariantsInReactome;
 	}
