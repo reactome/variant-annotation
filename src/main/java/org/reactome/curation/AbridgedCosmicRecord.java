@@ -104,6 +104,14 @@ public class AbridgedCosmicRecord {
 		return isProteinInReactome;
 	}
 
+	public String getIsProteinInReactomeAsString() {
+		if (isProteinInReactome == null) {
+			return "";
+		} else {
+			return isProteinInReactome ? "yes" : "no";
+		}
+	}
+
 	public Boolean anyVariantsAreAnnotated() {
 		return areAnyVariantsAnnotated;
 	}
