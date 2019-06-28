@@ -8,6 +8,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.System.lineSeparator;
+import static org.reactome.curation.AbridgedCosmicRecord.allSameOtherThanVariantAndCosmicPubMedId;
+import static org.reactome.curation.AbridgedCosmicRecord.getCosmicPubMedIds;
+import static org.reactome.curation.AbridgedCosmicRecord.getVariantIds;
 import static org.reactome.curation.HighPriorityVariantRecord.getIsProteinInReactome;
 import static org.reactome.curation.ParseUtilities.equalOrBothNull;
 
@@ -92,6 +95,10 @@ public class Main {
 
 			if (abridgedCosmicRecords.isEmpty()) {
 				CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
+					.withProtein(diseaseGeneRecord.getProtein())
+					.withVariantName(diseaseGeneRecord.getVariantName())
+					.withStatus(diseaseGeneRecord.getStatus())
+					.withReleaseVersion(diseaseGeneRecord.getReleaseVersion())
 					.isProteinInReactome(getIsProteinInReactome(highPriorityVariantRecords))
 					.build();
 				variantNameToOutputLine.put(
@@ -99,52 +106,30 @@ public class Main {
 					createOutputLine(diseaseGeneRecord, commonAnnotations)
 				);
 			} else {
-				if (!abridgedCosmicRecords
-					.stream()
-					.allMatch(
-						abr -> abr.isSameOtherThanVariantAndCosmicPubMedId(abridgedCosmicRecords.get(0))
-					)
-				) {
-					String error = diseaseGeneRecord.getVariantName() + " has abridged cosmic records with " +
-								   "differences (omitted from merged output)" + lineSeparator();
-					printToFile(error, errorFile);
-				} else {
-					List<String> variantIds = abridgedCosmicRecords
-						.stream()
-						.map(AbridgedCosmicRecord::getVariantId)
-						.collect(Collectors.toList());
-
-					List<Long> cosmicPubMedIds = abridgedCosmicRecords
-						.stream()
-						.map(AbridgedCosmicRecord::getCosmicPubMedId)
-						.collect(Collectors.toList());
-
-					AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
-
-					List<String> mismatches = getMismatches(
-						representativeAbridgedCosmicRecord, diseaseGeneRecord, highPriorityVariantRecords
-					);
-
-					if (!mismatches.isEmpty()) {
-						for (String mismatchError : mismatches) {
-							printToFile(mismatchError, errorFile);
-						}
-						continue;
-					}
-
-					CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
-						.withVariantIds(variantIds)
-						.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
-						.withCosmicPubMedIds(cosmicPubMedIds)
-						.isProteinInReactome(representativeAbridgedCosmicRecord.proteinIsInReactome())
-						.areAnyVariantsAnnotated(representativeAbridgedCosmicRecord.anyVariantsAreAnnotated())
-						.build();
-
-					variantNameToOutputLine.put(
-						diseaseGeneRecord.getVariantName(),
-						createOutputLine(diseaseGeneRecord, commonAnnotations)
-					);
+				List<String> errors = getErrors(abridgedCosmicRecords, diseaseGeneRecord, highPriorityVariantRecords);
+				if (!errors.isEmpty()) {
+					printToFile(errors, errorFile);
+					continue;
 				}
+
+				AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
+				CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
+					.withProtein(diseaseGeneRecord.getProtein())
+					.withVariantName(diseaseGeneRecord.getVariantName())
+					.withVariantIds(getVariantIds(abridgedCosmicRecords))
+					.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
+					.withCosmicPubMedIds(getCosmicPubMedIds(abridgedCosmicRecords))
+					.withStatus(diseaseGeneRecord.getStatus())
+					.withReleaseVersion(diseaseGeneRecord.getReleaseVersion())
+					.isProteinInReactome(representativeAbridgedCosmicRecord.proteinIsInReactome())
+					.areAnyVariantsAnnotated(representativeAbridgedCosmicRecord.anyVariantsAreAnnotated())
+					.build();
+
+				variantNameToOutputLine.put(
+					diseaseGeneRecord.getVariantName(),
+					createOutputLine(diseaseGeneRecord, commonAnnotations)
+				);
+
 			}
 		}
 
@@ -162,126 +147,127 @@ public class Main {
 				highPriorityVariantRecord.getVariantName(), k -> new ArrayList<>()
 			);
 
-			if (abridgedCosmicRecords.isEmpty()) {
-				String error = highPriorityVariantRecord.getVariantName() + " does not have any corresponding " +
-					"abridged cosmic record(s)" + lineSeparator();
-				printToFile(error, errorFile);
+			List<String> errors = getErrors(abridgedCosmicRecords, highPriorityVariantRecord);
+			if (!errors.isEmpty()) {
+				printToFile(errors, errorFile);
 				continue;
 			}
 
-			if (!abridgedCosmicRecords
-				.stream()
-				.allMatch(
-					abr -> abr.isSameOtherThanVariantAndCosmicPubMedId(abridgedCosmicRecords.get(0))
-				)
-			) {
-				String error = highPriorityVariantRecord.getVariantName() + " has abridged cosmic records with " +
-					"differences (omitted from merged output)" + lineSeparator();
+			AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
+			CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
+				.withProtein(representativeAbridgedCosmicRecord.getProtein())
+				.withVariantName(representativeAbridgedCosmicRecord.getVariantName())
+				.withVariantIds(getVariantIds(abridgedCosmicRecords))
+				.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
+				.withCosmicPubMedIds(getCosmicPubMedIds(abridgedCosmicRecords))
+				.withStatus(representativeAbridgedCosmicRecord.getStatus())
+				.withReleaseVersion(representativeAbridgedCosmicRecord.getReleaseVersion())
+				.isProteinInReactome(representativeAbridgedCosmicRecord.proteinIsInReactome())
+				.areAnyVariantsAnnotated(representativeAbridgedCosmicRecord.anyVariantsAreAnnotated())
+				.build();
 
-				printToFile(error, errorFile);
-			} else {
-				List<String> variantIds = abridgedCosmicRecords
-					.stream()
-					.map(AbridgedCosmicRecord::getVariantId)
-					.collect(Collectors.toList());
-
-				List<Long> cosmicPubMedIds = abridgedCosmicRecords
-					.stream()
-					.map(AbridgedCosmicRecord::getCosmicPubMedId)
-					.collect(Collectors.toList());
-
-				AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
-
-				List<String> mismatches = getMismatches(
-					highPriorityVariantRecord, representativeAbridgedCosmicRecord
-				);
-
-				if (!mismatches.isEmpty()) {
-					for (String mismatchError : mismatches) {
-						printToFile(mismatchError, errorFile);
-					}
-					continue;
-				}
-
-				CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
-					.withProtein(representativeAbridgedCosmicRecord.getProtein())
-					.withVariantIds(variantIds)
-					.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
-					.withCosmicPubMedIds(cosmicPubMedIds)
-					.withStatus(representativeAbridgedCosmicRecord.getStatus())
-					.withReleaseVersion(representativeAbridgedCosmicRecord.getReleaseVersion())
-					.isProteinInReactome(representativeAbridgedCosmicRecord.proteinIsInReactome())
-					.areAnyVariantsAnnotated(representativeAbridgedCosmicRecord.anyVariantsAreAnnotated())
-					.build();
-
-				variantNameToOutputLine.put(
-					highPriorityVariantRecord.getVariantName(),
-					createOutputLine(highPriorityVariantRecord, commonAnnotations)
-				);
-			}
+			variantNameToOutputLine.put(
+				highPriorityVariantRecord.getVariantName(),
+				createOutputLine(commonAnnotations)
+			);
 		}
 
 		return variantNameToOutputLine;
 	}
 
-	private static String createOutputLine(
-		DiseaseGeneRecord diseaseGeneRecord,
-		CommonAnnotations commonAnnotations
+	private static List<String> getErrors(
+		List<AbridgedCosmicRecord> abridgedCosmicRecords,
+		HighPriorityVariantRecord highPriorityVariantRecord
 	) {
+		List<String> errors = new ArrayList<>();
+
+		if (abridgedCosmicRecords.isEmpty()) {
+			String error = highPriorityVariantRecord.getVariantName() + " does not have any corresponding " +
+				"abridged cosmic record(s)" + lineSeparator();
+
+			errors.add(error);
+		}
+
+		String abridgedCosmicRecordDifferencesError =
+			checkForAbridgedCosmicRecordDifferencesError(highPriorityVariantRecord.getVariantName(), abridgedCosmicRecords);
+
+		if (!abridgedCosmicRecordDifferencesError.isEmpty()) {
+			errors.add(abridgedCosmicRecordDifferencesError);
+		}
+
+		AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
+		List<String> mismatches = getMismatches(highPriorityVariantRecord, representativeAbridgedCosmicRecord);
+		if (!mismatches.isEmpty()) {
+			errors.addAll(mismatches);
+		}
+
+		return errors;
+	}
+
+	private static List<String> getErrors(
+		List<AbridgedCosmicRecord> abridgedCosmicRecords,
+		DiseaseGeneRecord diseaseGeneRecord,
+		List<HighPriorityVariantRecord> highPriorityVariantRecords
+	) {
+		List<String> errors = new ArrayList<>();
+
+		String abridgedCosmicRecordDifferencesError =
+			checkForAbridgedCosmicRecordDifferencesError(diseaseGeneRecord.getVariantName(), abridgedCosmicRecords);
+
+		if (!abridgedCosmicRecordDifferencesError.isEmpty()) {
+			errors.add(abridgedCosmicRecordDifferencesError);
+		}
+
+		AbridgedCosmicRecord representativeAbridgedCosmicRecord = abridgedCosmicRecords.get(0);
+		List<String> mismatches = getMismatches(
+			representativeAbridgedCosmicRecord, diseaseGeneRecord, highPriorityVariantRecords
+		);
+		if (!mismatches.isEmpty()) {
+			errors.addAll(mismatches);
+		}
+
+		return errors;
+	}
+
+	private static String checkForAbridgedCosmicRecordDifferencesError(
+		String variantName,
+		List<AbridgedCosmicRecord> abridgedCosmicRecords
+	) {
+		if (!allSameOtherThanVariantAndCosmicPubMedId(abridgedCosmicRecords)) {
+			return variantName + " has abridged cosmic records with " +
+				"differences (omitted from merged output)" + lineSeparator();
+		} else {
+			return "";
+		}
+	}
+
+	private static String createOutputLine(DiseaseGeneRecord diseaseGeneRecord, CommonAnnotations commonAnnotations) {
 		return String.join(
 			"\t",
-			diseaseGeneRecord.getProtein(),
-			diseaseGeneRecord.getOmimIdentifier(),
-			diseaseGeneRecord.getUniprotId(),
-			diseaseGeneRecord.getVariantName(),
+			commonAnnotations.getProtein(),
+			diseaseGeneRecord != null ? diseaseGeneRecord.getOmimIdentifier() : "",
+			diseaseGeneRecord != null ? diseaseGeneRecord.getUniprotId() : "",
+			commonAnnotations.getVariantName(),
 			commonAnnotations.getVariantIdsAsString(),
-			diseaseGeneRecord.getDiseaseAsString(),
+			diseaseGeneRecord != null ? diseaseGeneRecord.getDiseaseAsString() : "",
 			commonAnnotations.getMutationAA(),
-			diseaseGeneRecord.getGofLofNull(),
-			diseaseGeneRecord.getWtReactomePathway(),
-			diseaseGeneRecord.getSelectedPubMedIdsAsString(),
+			diseaseGeneRecord != null ? diseaseGeneRecord.getGofLofNull() : "",
+			diseaseGeneRecord != null ? diseaseGeneRecord.getWtReactomePathway() : "",
+			diseaseGeneRecord != null ? diseaseGeneRecord.getSelectedPubMedIdsAsString() : "",
 			commonAnnotations.getCosmicPubMedIdsAsString(),
-			diseaseGeneRecord.getCurator(),
-			diseaseGeneRecord.getConsequenceAsString(),
-			diseaseGeneRecord.getNormalReactionAsString(),
-			diseaseGeneRecord.getComments(),
-			diseaseGeneRecord.getStatus(),
-			diseaseGeneRecord.getReleaseVersionAsString(),
+			diseaseGeneRecord != null ? diseaseGeneRecord.getCurator() : "",
+			diseaseGeneRecord != null ? diseaseGeneRecord.getConsequenceAsString() : "",
+			diseaseGeneRecord != null ? diseaseGeneRecord.getNormalReactionAsString() : "",
+			diseaseGeneRecord != null ? diseaseGeneRecord.getComments() : "",
+			commonAnnotations.getStatus(),
+			commonAnnotations.getReleaseVersionAsString(),
 			commonAnnotations.getIsProteinInReactomeAsString(),
 			commonAnnotations.getAreAnyVariantsAnnotatedAsString()
 		).concat(lineSeparator());
 	}
 
-	private static String createOutputLine(
-		HighPriorityVariantRecord highPriorityVariantRecord,
-		CommonAnnotations commonAnnotations
-	) {
-		if (commonAnnotations.getReleaseVersion() == 0) {
-			System.out.println(highPriorityVariantRecord.getVariantName());
-		}
-
-		return String.join(
-			"\t",
-			commonAnnotations.getProtein(),
-			"",
-			"",
-			highPriorityVariantRecord.getVariantName(),
-			commonAnnotations.getVariantIdsAsString(),
-			"",
-			commonAnnotations.getMutationAA(),
-			"",
-			"",
-			"",
-			commonAnnotations.getCosmicPubMedIdsAsString(),
-			"",
-			"",
-			"",
-			"",
-			commonAnnotations.getStatus(),
-			commonAnnotations.getReleaseVersionAsString(),
-			highPriorityVariantRecord.getIsProteinInReactomeAsString(),
-			commonAnnotations.getAreAnyVariantsAnnotatedAsString()
-		).concat(lineSeparator());
+	private static String createOutputLine(CommonAnnotations commonAnnotations) {
+		return createOutputLine(null, commonAnnotations);
 	}
 
 	private static List<String> getMismatches(
@@ -360,9 +346,15 @@ public class Main {
 			highPriorityVariantRecord.getIsProteinInReactomeAsString() + lineSeparator();
 	}
 
-	private static void printToFile(String output, String filePath) {
+	private static void printToFile(List<String> outputStrings, String filePath) {
+		for (String outputString : outputStrings) {
+			printToFile(outputString.concat(lineSeparator()), filePath);
+		}
+	}
+
+	private static void printToFile(String outputString, String filePath) {
 		try {
-			Files.write(Paths.get(filePath), output.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+			Files.write(Paths.get(filePath), outputString.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
