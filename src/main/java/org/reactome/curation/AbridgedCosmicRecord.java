@@ -3,6 +3,7 @@ package org.reactome.curation;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.reactome.curation.GenericRecord.getField;
 import static org.reactome.curation.ParseUtilities.*;
@@ -58,6 +59,28 @@ public class AbridgedCosmicRecord {
 
 	public static List<AbridgedCosmicRecord> parseAbridgedCosmicRecords(String tsvFilePath) throws IOException {
 		return GenericRecord.parseRecords(tsvFilePath, EXPECTED_HEADER, AbridgedCosmicRecord::new);
+	}
+
+	public static List<String> getVariantIds(List<AbridgedCosmicRecord> abridgedCosmicRecords) {
+		return abridgedCosmicRecords
+			.stream()
+			.map(AbridgedCosmicRecord::getVariantId)
+			.collect(Collectors.toList());
+	}
+
+	public static List<Long> getCosmicPubMedIds(List<AbridgedCosmicRecord> abridgedCosmicRecords) {
+		return abridgedCosmicRecords
+			.stream()
+			.map(AbridgedCosmicRecord::getCosmicPubMedId)
+			.collect(Collectors.toList());
+	}
+
+	public static boolean allSameOtherThanVariantAndCosmicPubMedId(List<AbridgedCosmicRecord> abridgedCosmicRecords) {
+		return abridgedCosmicRecords
+			.stream()
+			.allMatch(
+				abr -> abr.isSameOtherThanVariantAndCosmicPubMedId(abridgedCosmicRecords.get(0))
+			);
 	}
 
 	public boolean isSameOtherThanVariantAndCosmicPubMedId(AbridgedCosmicRecord abridgedCosmicRecord) {
