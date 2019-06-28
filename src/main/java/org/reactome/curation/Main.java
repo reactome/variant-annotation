@@ -114,7 +114,7 @@ public class Main {
 						.map(AbridgedCosmicRecord::getVariantId)
 						.collect(Collectors.toList());
 
-					List<Integer> cosmicPubMedIds = abridgedCosmicRecords
+					List<Long> cosmicPubMedIds = abridgedCosmicRecords
 						.stream()
 						.map(AbridgedCosmicRecord::getCosmicPubMedId)
 						.collect(Collectors.toList());
@@ -185,7 +185,7 @@ public class Main {
 					.map(AbridgedCosmicRecord::getVariantId)
 					.collect(Collectors.toList());
 
-				List<Integer> cosmicPubMedIds = abridgedCosmicRecords
+				List<Long> cosmicPubMedIds = abridgedCosmicRecords
 					.stream()
 					.map(AbridgedCosmicRecord::getCosmicPubMedId)
 					.collect(Collectors.toList());

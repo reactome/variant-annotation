@@ -3,61 +3,72 @@ package org.reactome.curation;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AdditionalAnnotations {
+public class CommonAnnotations {
+	private String recordLine;
+
 	private String protein;
+	private String variantName;
 	private Boolean proteinInReactome;
 	private List<String> variantIds;
 	private String mutationAA;
-	private List<Integer> cosmicPubMedIds;
+	private List<Long> cosmicPubMedIds;
 	private String status;
 	private int releaseVersion;
 	private Boolean areAnyVariantsAnnotated;
 
-	private AdditionalAnnotations() {
+	private CommonAnnotations() {
 
+	}
+
+	public String getRecordLine() {
+		return this.recordLine;
 	}
 
 	public String getProtein() {
-		return protein;
+		return this.protein;
 	}
 
 	public String getIsProteinInReactomeAsString() {
-		if (proteinInReactome == null) {
+		if (proteinIsInReactome() == null) {
 			return "";
 		} else {
-			return proteinInReactome ? "yes" : "no";
+			return proteinIsInReactome() ? "yes" : "no";
 		}
+	}
+
+	public String getVariantName() {
+		return this.variantName;
 	}
 
 	public Boolean proteinIsInReactome() {
-		return proteinInReactome;
+		return this.proteinInReactome;
 	}
 
 	public String getVariantIdsAsString() {
-		if (variantIds == null || variantIds.isEmpty()) {
+		if (getVariantIds() == null || getVariantIds().isEmpty()) {
 			return "";
 		}
 
-		return variantIds
+		return getVariantIds()
 			.stream()
 			.distinct()
 			.collect(Collectors.joining(","));
 	}
 
 	public List<String> getVariantIds() {
-		return variantIds;
+		return this.variantIds;
 	}
 
 	public String getMutationAA() {
-		return mutationAA == null ? "" : mutationAA;
+		return this.mutationAA == null ? "" : this.mutationAA;
 	}
 
 	public String getCosmicPubMedIdsAsString() {
-		if (cosmicPubMedIds == null || cosmicPubMedIds.isEmpty()) {
+		if (getCosmicPubMedIds() == null || getCosmicPubMedIds().isEmpty()) {
 			return "";
 		}
 
-		return cosmicPubMedIds
+		return getCosmicPubMedIds()
 			.stream()
 			.distinct()
 			.map(Object::toString)
@@ -65,53 +76,64 @@ public class AdditionalAnnotations {
 	}
 
 	public String getStatus() {
-		return status;
+		return this.status;
 	}
 
 	public int getReleaseVersion() {
-		return releaseVersion;
+		return this.releaseVersion;
 	}
 
 	public String getReleaseVersionAsString() {
-		if (releaseVersion == -1) {
+		if (getReleaseVersion() == -1) {
 			return "";
 		} else {
-			return Integer.toString(releaseVersion);
+			return Integer.toString(getReleaseVersion());
 		}
 	}
 
-	public List<Integer> getCosmicPubMedIds() {
-		return cosmicPubMedIds;
+	public List<Long> getCosmicPubMedIds() {
+		return this.cosmicPubMedIds;
 	}
 
 	public String getAreAnyVariantsAnnotatedAsString() {
-		if (areAnyVariantsAnnotated == null) {
+		if (anyVariantsAreAnnotated() == null) {
 			return "";
 		} else {
-			return areAnyVariantsAnnotated ? "yes" : "no";
+			return anyVariantsAreAnnotated() ? "yes" : "no";
 		}
 	}
 
 	public Boolean anyVariantsAreAnnotated() {
-		return areAnyVariantsAnnotated;
+		return this.areAnyVariantsAnnotated;
 	}
 
 	public static class Builder {
+		private String recordLine;
+
 		private String protein;
+		private String variantName;
 		private Boolean proteinInReactome;
 		private List<String> variantIds;
 		private String mutationAA;
-		private List<Integer> cosmicPubMedIds;
+		private List<Long> cosmicPubMedIds;
 		private String status;
 		private int releaseVersion;
 		private Boolean areAnyVariantsAnnotated;
 
-		public Builder() {
+		public Builder withRecordLine(String recordLine) {
+			this.recordLine = recordLine;
 
+			return this;
 		}
 
 		public Builder withProtein(String protein) {
 			this.protein = protein;
+
+			return this;
+		}
+
+		public Builder withVariantName(String variantName) {
+			this.variantName = variantName;
 
 			return this;
 		}
@@ -128,17 +150,17 @@ public class AdditionalAnnotations {
 			return this;
 		}
 
+
 		public Builder withMutationAA(String mutationAA) {
 			this.mutationAA = mutationAA;
 
 			return this;
 		}
 
-		public Builder withCosmicPubMedIds(List<Integer> cosmicPubMedIds) {
+		public Builder withCosmicPubMedIds(List<Long> cosmicPubMedIds) {
 			this.cosmicPubMedIds = cosmicPubMedIds;
 
 			return this;
-
 		}
 
 		public Builder withStatus(String status) {
@@ -159,10 +181,12 @@ public class AdditionalAnnotations {
 			return this;
 		}
 
-		public AdditionalAnnotations build() {
-			AdditionalAnnotations annotations = new AdditionalAnnotations();
+		public CommonAnnotations build() {
+			CommonAnnotations annotations = new CommonAnnotations();
 
-			annotations.protein = protein;
+			annotations.recordLine = this.recordLine;
+			annotations.protein = this.protein;
+			annotations.variantName = this.variantName;
 			annotations.proteinInReactome = this.proteinInReactome;
 			annotations.variantIds = this.variantIds;
 			annotations.mutationAA = this.mutationAA;
