@@ -91,12 +91,12 @@ public class Main {
 			);
 
 			if (abridgedCosmicRecords.isEmpty()) {
-				AdditionalAnnotations additionalAnnotations = new AdditionalAnnotations.Builder()
+				CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
 					.isProteinInReactome(getIsProteinInReactome(highPriorityVariantRecords))
 					.build();
 				variantNameToOutputLine.put(
 					diseaseGeneRecord.getVariantName(),
-					createOutputLine(diseaseGeneRecord, additionalAnnotations)
+					createOutputLine(diseaseGeneRecord, commonAnnotations)
 				);
 			} else {
 				if (!abridgedCosmicRecords
@@ -132,7 +132,7 @@ public class Main {
 						continue;
 					}
 
-					AdditionalAnnotations additionalAnnotations = new AdditionalAnnotations.Builder()
+					CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
 						.withVariantIds(variantIds)
 						.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
 						.withCosmicPubMedIds(cosmicPubMedIds)
@@ -142,7 +142,7 @@ public class Main {
 
 					variantNameToOutputLine.put(
 						diseaseGeneRecord.getVariantName(),
-						createOutputLine(diseaseGeneRecord, additionalAnnotations)
+						createOutputLine(diseaseGeneRecord, commonAnnotations)
 					);
 				}
 			}
@@ -203,7 +203,7 @@ public class Main {
 					continue;
 				}
 
-				AdditionalAnnotations additionalAnnotations = new AdditionalAnnotations.Builder()
+				CommonAnnotations commonAnnotations = new CommonAnnotations.Builder()
 					.withProtein(representativeAbridgedCosmicRecord.getProtein())
 					.withVariantIds(variantIds)
 					.withMutationAA(representativeAbridgedCosmicRecord.getMutationAA())
@@ -216,7 +216,7 @@ public class Main {
 
 				variantNameToOutputLine.put(
 					highPriorityVariantRecord.getVariantName(),
-					createOutputLine(highPriorityVariantRecord, additionalAnnotations)
+					createOutputLine(highPriorityVariantRecord, commonAnnotations)
 				);
 			}
 		}
@@ -226,7 +226,7 @@ public class Main {
 
 	private static String createOutputLine(
 		DiseaseGeneRecord diseaseGeneRecord,
-		AdditionalAnnotations additionalAnnotations
+		CommonAnnotations commonAnnotations
 	) {
 		return String.join(
 			"\t",
@@ -234,53 +234,53 @@ public class Main {
 			diseaseGeneRecord.getOmimIdentifier(),
 			diseaseGeneRecord.getUniprotId(),
 			diseaseGeneRecord.getVariantName(),
-			additionalAnnotations.getVariantIdsAsString(),
+			commonAnnotations.getVariantIdsAsString(),
 			diseaseGeneRecord.getDiseaseAsString(),
-			additionalAnnotations.getMutationAA(),
+			commonAnnotations.getMutationAA(),
 			diseaseGeneRecord.getGofLofNull(),
 			diseaseGeneRecord.getWtReactomePathway(),
 			diseaseGeneRecord.getSelectedPubMedIdsAsString(),
-			additionalAnnotations.getCosmicPubMedIdsAsString(),
+			commonAnnotations.getCosmicPubMedIdsAsString(),
 			diseaseGeneRecord.getCurator(),
 			diseaseGeneRecord.getConsequenceAsString(),
 			diseaseGeneRecord.getNormalReactionAsString(),
 			diseaseGeneRecord.getComments(),
 			diseaseGeneRecord.getStatus(),
 			diseaseGeneRecord.getReleaseVersionAsString(),
-			additionalAnnotations.getIsProteinInReactomeAsString(),
-			additionalAnnotations.getAreAnyVariantsAnnotatedAsString()
+			commonAnnotations.getIsProteinInReactomeAsString(),
+			commonAnnotations.getAreAnyVariantsAnnotatedAsString()
 		).concat(lineSeparator());
 	}
 
 	private static String createOutputLine(
 		HighPriorityVariantRecord highPriorityVariantRecord,
-		AdditionalAnnotations additionalAnnotations
+		CommonAnnotations commonAnnotations
 	) {
-		if (additionalAnnotations.getReleaseVersion() == 0) {
+		if (commonAnnotations.getReleaseVersion() == 0) {
 			System.out.println(highPriorityVariantRecord.getVariantName());
 		}
 
 		return String.join(
 			"\t",
-			additionalAnnotations.getProtein(),
+			commonAnnotations.getProtein(),
 			"",
 			"",
 			highPriorityVariantRecord.getVariantName(),
-			additionalAnnotations.getVariantIdsAsString(),
+			commonAnnotations.getVariantIdsAsString(),
 			"",
-			additionalAnnotations.getMutationAA(),
-			"",
-			"",
-			"",
-			additionalAnnotations.getCosmicPubMedIdsAsString(),
+			commonAnnotations.getMutationAA(),
 			"",
 			"",
 			"",
+			commonAnnotations.getCosmicPubMedIdsAsString(),
 			"",
-			additionalAnnotations.getStatus(),
-			additionalAnnotations.getReleaseVersionAsString(),
+			"",
+			"",
+			"",
+			commonAnnotations.getStatus(),
+			commonAnnotations.getReleaseVersionAsString(),
 			highPriorityVariantRecord.getIsProteinInReactomeAsString(),
-			additionalAnnotations.getAreAnyVariantsAnnotatedAsString()
+			commonAnnotations.getAreAnyVariantsAnnotatedAsString()
 		).concat(lineSeparator());
 	}
 
@@ -355,7 +355,7 @@ public class Main {
 		HighPriorityVariantRecord highPriorityVariantRecord
 	) {
 		return abridgedCosmicRecord.getVariantName() + " in abridged cosmic records has a value for " +
-			"'proteins in reactome' of " + abridgedCosmicRecord.getIsProteinInReactomeAsString() + "that does not " +
+			"'proteins in reactome' of " + abridgedCosmicRecord.getIsProteinInReactomeAsString() + " that does not " +
 			"match the value in the high priority variant record of " +
 			highPriorityVariantRecord.getIsProteinInReactomeAsString() + lineSeparator();
 	}

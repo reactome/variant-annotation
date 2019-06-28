@@ -1,6 +1,7 @@
 package org.reactome.curation;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static org.reactome.curation.GenericRecord.getField;
@@ -22,36 +23,37 @@ public class AbridgedCosmicRecord {
 		"Mutation Description"
 	);
 
-	private String tsvLine;
-
-	private String protein;
 	private String mutationAA;
-	private String variantName;
-	private String variantId;
-	private int cosmicPubMedId;
-	private Boolean isProteinInReactome;
-	private Boolean areAnyVariantsAnnotated;
 	private Boolean highPriority;
-	private String status;
-	private int releaseVersion;
 	private String mutationDescription;
+	private CommonAnnotations commonAnnotations;
 
 	private AbridgedCosmicRecord(String tsvLine) {
-		this.tsvLine = tsvLine;
-
 		int currentField = 0;
 
-		this.protein = getField(tsvLine, currentField++);
+		String protein = getField(tsvLine, currentField++);
 		this.mutationAA = getField(tsvLine, currentField++);
-		this.variantName = getField(tsvLine, currentField++);
-		this.variantId = getField(tsvLine, currentField++);
-		this.cosmicPubMedId = Integer.parseInt(getField(tsvLine, currentField++));
-		this.isProteinInReactome = getBooleanFromYesNo(getField(tsvLine, currentField++));
-		this.areAnyVariantsAnnotated = getBooleanFromYesNo(getField(tsvLine, currentField++));
+		String variantName = getField(tsvLine, currentField++);
+		String variantId = getField(tsvLine, currentField++);
+		long cosmicPubMedId = Long.parseLong(getField(tsvLine, currentField++));
+		Boolean isProteinInReactome = getBooleanFromYesNo(getField(tsvLine, currentField++));
+		Boolean areAnyVariantsAnnotated = getBooleanFromYesNo(getField(tsvLine, currentField++));
 		this.highPriority = getBooleanFromYesNo(getField(tsvLine, currentField++));
-		this.status = getField(tsvLine, currentField++);
-		this.releaseVersion = parseReleaseVersion(getField(tsvLine, currentField++));
+		String status = getField(tsvLine, currentField++);
+		int releaseVersion = parseReleaseVersion(getField(tsvLine, currentField++));
 		this.mutationDescription = getField(tsvLine, currentField++);
+
+		this.commonAnnotations = new CommonAnnotations.Builder()
+			.withRecordLine(tsvLine)
+			.withProtein(protein)
+			.withVariantName(variantName)
+			.withVariantIds(Collections.singletonList(variantId))
+			.withCosmicPubMedIds(Collections.singletonList(cosmicPubMedId))
+			.isProteinInReactome(isProteinInReactome)
+			.areAnyVariantsAnnotated(areAnyVariantsAnnotated)
+			.withStatus(status)
+			.withReleaseVersion(releaseVersion)
+			.build();
 	}
 
 	public static List<AbridgedCosmicRecord> parseAbridgedCosmicRecords(String tsvFilePath) throws IOException {
@@ -64,79 +66,71 @@ public class AbridgedCosmicRecord {
 		}
 
 		return
-			this.protein.equals(abridgedCosmicRecord.getProtein()) &&
-			this.mutationAA.equals(abridgedCosmicRecord.getMutationAA()) &&
-			this.variantName.equals(abridgedCosmicRecord.getVariantName()) &&
-			equalOrBothNull(this.isProteinInReactome, abridgedCosmicRecord.proteinIsInReactome()) &&
-			equalOrBothNull(this.areAnyVariantsAnnotated, abridgedCosmicRecord.anyVariantsAreAnnotated()) &&
-			equalOrBothNull(this.highPriority, abridgedCosmicRecord.isHighPriority()) &&
-			this.status.equals(abridgedCosmicRecord.getStatus()) &&
-			this.releaseVersion == abridgedCosmicRecord.getReleaseVersion() &&
-			this.mutationDescription.equals(abridgedCosmicRecord.getMutationDescription());
+			this.getProtein().equals(abridgedCosmicRecord.getProtein()) &&
+			this.getMutationAA().equals(abridgedCosmicRecord.getMutationAA()) &&
+			this.getVariantName().equals(abridgedCosmicRecord.getVariantName()) &&
+			equalOrBothNull(this.proteinIsInReactome(), abridgedCosmicRecord.proteinIsInReactome()) &&
+			equalOrBothNull(this.anyVariantsAreAnnotated(), abridgedCosmicRecord.anyVariantsAreAnnotated()) &&
+			equalOrBothNull(this.isHighPriority(), abridgedCosmicRecord.isHighPriority()) &&
+			this.getStatus().equals(abridgedCosmicRecord.getStatus()) &&
+			this.getReleaseVersion() == abridgedCosmicRecord.getReleaseVersion() &&
+			this.getMutationDescription().equals(abridgedCosmicRecord.getMutationDescription());
 	}
 
 	@Override
 	public String toString() {
-		return this.tsvLine;
+		return this.commonAnnotations.getRecordLine();
 	}
 
 	public String getProtein() {
-		return protein;
+		return this.commonAnnotations.getProtein();
 	}
 
 	public String getMutationAA() {
-		return mutationAA;
+		return this.mutationAA;
 	}
 
 	public String getVariantName() {
-		return variantName;
+		return this.commonAnnotations.getVariantName();
 	}
 
 	public String getVariantId() {
-		return variantId;
+		return this.commonAnnotations.getVariantIds().get(0);
 	}
 
-	public int getCosmicPubMedId() {
-		return cosmicPubMedId;
+	public long getCosmicPubMedId() {
+		return this.commonAnnotations.getCosmicPubMedIds().get(0);
 	}
 
 	public Boolean proteinIsInReactome() {
-		return isProteinInReactome;
+		return this.commonAnnotations.proteinIsInReactome();
 	}
 
 	public String getIsProteinInReactomeAsString() {
-		if (isProteinInReactome == null) {
-			return "";
-		} else {
-			return isProteinInReactome ? "yes" : "no";
-		}
+		return this.commonAnnotations.getIsProteinInReactomeAsString();
 	}
 
 	public Boolean anyVariantsAreAnnotated() {
-		return areAnyVariantsAnnotated;
+		return this.commonAnnotations.anyVariantsAreAnnotated();
 	}
 
 	public Boolean isHighPriority() {
-		return highPriority;
+		return this.highPriority;
 	}
 
 	public String getStatus() {
-		return status;
+		return this.commonAnnotations.getStatus();
 	}
 
 	public String getReleaseVersionAsString() {
-		if (releaseVersion == -1) {
-			return "";
-		} else {
-			return Integer.toString(releaseVersion);
-		}
+		return this.commonAnnotations.getReleaseVersionAsString();
 	}
 
 	public int getReleaseVersion() {
-		return releaseVersion;
+		return this.commonAnnotations.getReleaseVersion();
 	}
 
 	public String getMutationDescription() {
-		return mutationDescription;
+		return this.mutationDescription;
 	}
 }

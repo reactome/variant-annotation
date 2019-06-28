@@ -1,6 +1,7 @@
 package org.reactome.curation;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static org.reactome.curation.GenericRecord.getField;
@@ -28,73 +29,82 @@ public class DiseaseGeneRecord {
 		"ReleaseVersion"
 	);
 
-	private String protein;
 	private String omimIdentifier;
 	private String uniprotId;
-	private String variantName;
-	private String variantId;
 	private List<String> disease;
 	private String mutation;
 	private String gofLofNull;
 	private String wtReactomePathway;
 	private List<Long> selectedPubMedIds;
-	private List<Long> cosmicPubMedIds;
 	private String curator;
 	private List<String> consequence;
 	private List<String> normalReaction;
 	private String comments;
-	private String status;
-	private int releaseVersion;
+	private CommonAnnotations commonAnnotations;
 
 	private DiseaseGeneRecord(String tsvLine) {
-
 		int currentField = 0;
 
-		this.protein = getField(tsvLine, currentField++);
+		String protein = getField(tsvLine, currentField++);
 		this.omimIdentifier = getField(tsvLine, currentField++);
 		this.uniprotId = getField(tsvLine, currentField++);
-		this.variantName = getField(tsvLine, currentField++);
-		this.variantId = getField(tsvLine, currentField++);
+		String variantName = getField(tsvLine, currentField++);
+		String variantId = getField(tsvLine, currentField++);
 		this.disease = getListFromCSVString(getField(tsvLine, currentField++));
 		this.mutation = getField(tsvLine, currentField++);
 		this.gofLofNull = getField(tsvLine, currentField++);
 		this.wtReactomePathway = getField(tsvLine, currentField++);
 		this.selectedPubMedIds = convertStringListToLongList(getListFromCSVString(getField(tsvLine, currentField++)));
-		this.cosmicPubMedIds = convertStringListToLongList(getListFromCSVString(getField(tsvLine, currentField++)));
+		List<Long> cosmicPubMedIds = convertStringListToLongList(getListFromCSVString(getField(tsvLine, currentField++)));
 		this.curator = getField(tsvLine, currentField++);
 		this.consequence = getListFromCSVString(getField(tsvLine, currentField++));
 		this.normalReaction = getListFromCSVString(getField(tsvLine, currentField++));
 		this.comments = getField(tsvLine, currentField++);
-		this.status = getField(tsvLine, currentField++);
-		this.releaseVersion = parseReleaseVersion((getField(tsvLine, currentField++)));
+		String status = getField(tsvLine, currentField++);
+		int releaseVersion = parseReleaseVersion((getField(tsvLine, currentField++)));
+
+		this.commonAnnotations = new CommonAnnotations.Builder()
+			.withRecordLine(tsvLine)
+			.withProtein(protein)
+			.withVariantName(variantName)
+			.withVariantIds(Collections.singletonList(variantId))
+			.withCosmicPubMedIds(cosmicPubMedIds)
+			.withStatus(status)
+			.withReleaseVersion(releaseVersion)
+			.build();
 	}
 
 	public static List<DiseaseGeneRecord> parseDiseaseGeneRecords(String tsvFilePath) throws IOException {
 		return GenericRecord.parseRecords(tsvFilePath, EXPECTED_HEADER, DiseaseGeneRecord::new);
 	}
 
+	@Override
+	public String toString() {
+		return this.commonAnnotations.getRecordLine();
+	}
+
 	public String getProtein() {
-		return protein;
+		return this.commonAnnotations.getProtein();
 	}
 
 	public String getOmimIdentifier() {
-		return omimIdentifier;
+		return this.omimIdentifier;
 	}
 
 	public String getUniprotId() {
-		return uniprotId;
+		return this.uniprotId;
 	}
 
 	public String getVariantName() {
-		return variantName;
+		return this.commonAnnotations.getVariantName();
 	}
 
 	public String getVariantId() {
-		return variantId;
+		return this.commonAnnotations.getVariantIds().get(0);
 	}
 
 	public List<String> getDisease() {
-		return disease;
+		return this.disease;
 	}
 
 	public String getDiseaseAsString() {
@@ -102,19 +112,19 @@ public class DiseaseGeneRecord {
 	}
 
 	public String getMutation() {
-		return mutation;
+		return this.mutation;
 	}
 
 	public String getGofLofNull() {
-		return gofLofNull;
+		return this.gofLofNull;
 	}
 
 	public String getWtReactomePathway() {
-		return wtReactomePathway;
+		return this.wtReactomePathway;
 	}
 
 	public List<Long> getSelectedPubMedIds() {
-		return selectedPubMedIds;
+		return this.selectedPubMedIds;
 	}
 
 	public String getSelectedPubMedIdsAsString() {
@@ -122,7 +132,7 @@ public class DiseaseGeneRecord {
 	}
 
 	public List<Long> getCosmicPubMedIds() {
-		return cosmicPubMedIds;
+		return this.commonAnnotations.getCosmicPubMedIds();
 	}
 
 	public String getCosmicPubMedIdsString() {
@@ -130,11 +140,11 @@ public class DiseaseGeneRecord {
 	}
 
 	public String getCurator() {
-		return curator;
+		return this.curator;
 	}
 
 	public List<String> getConsequence() {
-		return consequence;
+		return this.consequence;
 	}
 
 	public String getConsequenceAsString() {
@@ -142,7 +152,7 @@ public class DiseaseGeneRecord {
 	}
 
 	public List<String> getNormalReaction() {
-		return normalReaction;
+		return this.normalReaction;
 	}
 
 	public String getNormalReactionAsString() {
@@ -150,22 +160,18 @@ public class DiseaseGeneRecord {
 	}
 
 	public String getComments() {
-		return comments;
+		return this.comments;
 	}
 
 	public String getStatus() {
-		return status;
+		return this.commonAnnotations.getStatus();
 	}
 
 	public int getReleaseVersion() {
-		return releaseVersion;
+		return this.commonAnnotations.getReleaseVersion();
 	}
 
 	public String getReleaseVersionAsString() {
-		if (releaseVersion == -1) {
-			return "";
-		} else {
-			return Integer.toString(releaseVersion);
-		}
+		return this.commonAnnotations.getReleaseVersionAsString();
 	}
 }

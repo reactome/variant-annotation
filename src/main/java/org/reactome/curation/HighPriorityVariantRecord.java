@@ -17,52 +17,53 @@ public class HighPriorityVariantRecord {
 		"specific variant in Reactome"
 	);
 
-	private String variantName;
 	private int count;
-	private Boolean isProteinInReactome;
 	private String geneHasVariantsInReactome;
 	private String specificVariantsInReactome;
+	private CommonAnnotations commonAnnotations;
 
 	private HighPriorityVariantRecord(String tsvLine) {
-
 		int currentField = 0;
 
-		this.variantName = getField(tsvLine, currentField++);
+		String variantName = getField(tsvLine, currentField++);
 		this.count = convertToInt(getField(tsvLine, currentField++));
-		this.isProteinInReactome = getBooleanFromYesNo(getField(tsvLine, currentField++));
+		Boolean isProteinInReactome = getBooleanFromYesNo(getField(tsvLine, currentField++));
 		this.geneHasVariantsInReactome = getField(tsvLine, currentField++);
 		this.specificVariantsInReactome = getField(tsvLine, currentField++);
+
+		this.commonAnnotations = new CommonAnnotations.Builder()
+			.withRecordLine(tsvLine)
+			.withVariantName(variantName)
+			.isProteinInReactome(isProteinInReactome)
+			.build();
 	}
 
 	public static List<HighPriorityVariantRecord> parseHighPriorityVariantRecords(String tsvFilePath) throws IOException {
 		return GenericRecord.parseRecords(tsvFilePath, EXPECTED_HEADER, HighPriorityVariantRecord::new);
 	}
 
+	@Override
+	public String toString() {
+		return this.commonAnnotations.getRecordLine();
+	}
+
 	public String getVariantName() {
-		return variantName;
+		return this.commonAnnotations.getVariantName();
 	}
 
 	public int getCount() {
-		return count;
+		return this.count;
 	}
 
 	public String getIsProteinInReactomeAsString() {
-		if (isProteinInReactome == null) {
-			return "";
-		} else {
-			return isProteinInReactome ? "yes" : "no";
-		}
+		return this.commonAnnotations.getIsProteinInReactomeAsString();
 	}
 
 	public Boolean proteinIsInReactome() {
-		return isProteinInReactome;
+		return this.commonAnnotations.proteinIsInReactome();
 	}
 
 	public static Boolean getIsProteinInReactome(List<HighPriorityVariantRecord> highPriorityVariantRecords) {
-		if (highPriorityVariantRecords.size() > 1) {
-			System.out.println(highPriorityVariantRecords.toString());
-		}
-
 		if (highPriorityVariantRecords.isEmpty() ||
 			highPriorityVariantRecords.stream().allMatch(r -> r.proteinIsInReactome() == null)) {
 			return null;
@@ -72,10 +73,10 @@ public class HighPriorityVariantRecord {
 	}
 
 	public String geneHasVariantsInReactome() {
-		return geneHasVariantsInReactome;
+		return this.geneHasVariantsInReactome;
 	}
 
 	public String specificVariantsAreInReactome() {
-		return specificVariantsInReactome;
+		return this.specificVariantsInReactome;
 	}
 }
